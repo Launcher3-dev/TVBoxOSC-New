@@ -94,19 +94,19 @@ public class HomeActivity extends BaseActivity {
         return R.layout.activity_home;
     }
 
-    boolean useCacheConfig = false;
-
     @Override
     protected void init() {
         EventBus.getDefault().register(this);
         ControlManager.get().startServer();
         initView();
         initViewModel();
-        useCacheConfig = false;
-        Intent intent = getIntent();
-        if (intent != null && intent.getExtras() != null) {
-            Bundle bundle = intent.getExtras();
-            useCacheConfig = bundle.getBoolean("useCache", false);
+        Bundle bundle = getIntent().getExtras();
+        if (bundle != null) {
+            boolean reload = bundle.getBoolean("reload", true);
+            if (reload) {
+                dataInitOk = false;
+                jarInitOk = false;
+            }
         }
         initData();
     }
@@ -214,15 +214,14 @@ public class HomeActivity extends BaseActivity {
         showLoading();
         if (dataInitOk && !jarInitOk) {
             if (!ApiConfig.get().getSpider().isEmpty()) {
-                ApiConfig.get().loadJar(useCacheConfig, ApiConfig.get().getSpider(), new ApiConfig.LoadConfigCallback() {
+                ApiConfig.get().loadJar(Hawk.get(HawkConfig.API_URL_CACHE, true), ApiConfig.get().getSpider(), new ApiConfig.LoadConfigCallback() {
                     @Override
                     public void success() {
                         jarInitOk = true;
                         mHandler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                if (!useCacheConfig)
-                                    Toast.makeText(HomeActivity.this, "自定义jar加载成功", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(HomeActivity.this, "自定义jar加载成功", Toast.LENGTH_SHORT).show();
                                 initData();
                             }
                         }, 50);
@@ -248,7 +247,7 @@ public class HomeActivity extends BaseActivity {
             }
             return;
         }
-        ApiConfig.get().loadConfig(useCacheConfig, new ApiConfig.LoadConfigCallback() {
+        ApiConfig.get().loadConfig(Hawk.get(HawkConfig.API_URL_CACHE, true), new ApiConfig.LoadConfigCallback() {
             TipDialog dialog = null;
 
             @Override
@@ -335,7 +334,7 @@ public class HomeActivity extends BaseActivity {
                     }
                 });
             }
-        }, this);
+        });
     }
 
     private void initViewPager(AbsSortXml absXml) {
@@ -518,6 +517,7 @@ public class HomeActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        mHandler.removeCallbacksAndMessages(null);
         EventBus.getDefault().unregister(this);
         AppManager.getInstance().appExit(0);
         ControlManager.get().stopServer();

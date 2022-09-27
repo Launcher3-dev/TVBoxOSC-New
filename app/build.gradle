@@ -3,12 +3,21 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 30
 
+    signingConfigs {
+        config {
+            keyAlias 'zx'
+            keyPassword '123456'
+            storeFile file('../release.jks')
+            storePassword '123456'
+        }
+    }
+
     defaultConfig {
         applicationId 'com.github.tvbox.osc'
         minSdkVersion 16
-        targetSdkVersion 26
+        targetSdkVersion 29
         versionCode 1
-        versionName '1.0.0'
+        versionName '1.0.2'
         multiDexEnabled true
         //设置room的Schema的位置
         javaCompileOptions {
@@ -20,10 +29,12 @@ android {
 
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/beans.xml'
     }
 
     buildTypes {
         debug {
+            signingConfig signingConfigs.config
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             minifyEnabled false
 
@@ -32,6 +43,7 @@ android {
             }
         }
         release {
+            signingConfig signingConfigs.config
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             minifyEnabled true
 
@@ -50,12 +62,12 @@ android {
         checkReleaseBuilds false
         abortOnError false
     }
-    dexOptions {
-        javaMaxHeapSize "4g"
-        additionalParameters += '--multi-dex'
-        additionalParameters += '--set-max-idx-number=48000'
-        additionalParameters += '--minimal-main-dex'
-    }
+//    dexOptions {
+//        javaMaxHeapSize "4g"
+//        additionalParameters += '--multi-dex'
+//        additionalParameters += '--set-max-idx-number=48000'
+//        additionalParameters += '--minimal-main-dex'
+//    }
 }
 
 dependencies {
@@ -87,10 +99,13 @@ dependencies {
     implementation 'com.orhanobut:hawk:2.0.1'
 
     implementation project(":player")
+    implementation project(":XWalkModule")
+    implementation project(":cybergarage")
 
-    implementation('org.xwalk:xwalk_shared_library:23.53.589.4') {
-        exclude group: 'com.android.support'
-    }
+//    implementation('org.xwalk:xwalk_shared_library:23.53.589.4') {
+//        exclude group: 'com.android.support'
+//    }
+    //implementation 'com.github.louisgeek:xwalk_core_library:23.53.589.4'
     implementation 'com.lzy.net:okgo:3.0.4'
     // implementation 'com.tencent.bugly:crashreport_upgrade:latest.release'
     implementation 'com.owen:tv-recyclerview:3.0.0'

@@ -1,3 +1,5 @@
 rootProject.name = "TVBox"
 include ':app'
 include ':player'
+include ':XWalkModule'
+include ':cybergarage'

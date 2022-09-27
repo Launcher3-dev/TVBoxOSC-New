@@ -6,6 +6,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.recyclerview.widget.DiffUtil;
 
 import com.github.tvbox.osc.R;
@@ -452,6 +453,15 @@ public class ModelSettingFragment extends BaseLazyFragment {
                     }
                 }, types, defaultPos);
                 dialog.show();
+            }
+        });
+        SwitchCompat sw = findViewById(R.id.swApiCache);
+        sw.setChecked(Hawk.get(HawkConfig.API_URL_CACHE, true));
+        findViewById(R.id.llApiCache).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sw.setChecked(!sw.isChecked());
+                Hawk.put(HawkConfig.API_URL_CACHE, sw.isChecked());
             }
         });
         SettingActivity.callback = new SettingActivity.DevModeCallback() {

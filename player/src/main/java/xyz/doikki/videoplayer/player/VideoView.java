@@ -632,6 +632,9 @@ public class VideoView<P extends AbstractPlayer> extends FrameLayout
         mAssetFileDescriptor = null;
         mUrl = url;
         mHeaders = headers;
+        if (mVideoController != null) {
+            mVideoController.setUrl(mUrl);
+        }
     }
 
     /**

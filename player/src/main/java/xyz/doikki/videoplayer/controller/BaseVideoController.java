@@ -71,6 +71,8 @@ public abstract class BaseVideoController extends FrameLayout
     //是否开始刷新进度
     private boolean mIsStartProgress;
 
+    private String mUrl;
+
     //保存了所有的控制组件
     protected LinkedHashMap<IControlComponent, Boolean> mControlComponents = new LinkedHashMap<>();
 
@@ -89,6 +91,14 @@ public abstract class BaseVideoController extends FrameLayout
     public BaseVideoController(@NonNull Context context, @Nullable AttributeSet attrs, @AttrRes int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         initView();
+    }
+
+    public String getUrl() {
+        return mUrl;
+    }
+
+    public void setUrl(String url) {
+        mUrl = url;
     }
 
     protected void initView() {

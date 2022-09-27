@@ -182,11 +182,12 @@ public class SettingActivity extends BaseActivity {
                 homeRec != Hawk.get(HawkConfig.HOME_REC, 0) ||
                 dnsOpt != Hawk.get(HawkConfig.DOH_URL, 0)) {
             AppManager.getInstance().finishAllActivity();
+            Bundle bundle = new Bundle();
             if (currentApi.equals(Hawk.get(HawkConfig.API_URL, ""))) {
-                Bundle bundle = new Bundle();
-                bundle.putBoolean("useCache", true);
+                bundle.putBoolean("reload", false);
                 jumpActivity(HomeActivity.class, bundle);
             } else {
+                bundle.putBoolean("reload", true);
                 jumpActivity(HomeActivity.class);
             }
         } else {

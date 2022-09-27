@@ -1,5 +1,7 @@
 package com.github.tvbox.osc.player.controller;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Message;
 import android.view.KeyEvent;
@@ -9,6 +11,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -88,6 +91,7 @@ public class VodController extends BaseController {
     LinearLayout mParseRoot;
     TvRecyclerView mGridView;
     TextView mPlayTitle;
+    TextView mPlayPauseBtn;
     TextView mNextBtn;
     TextView mPreBtn;
     TextView mPlayerScaleBtn;
@@ -113,6 +117,7 @@ public class VodController extends BaseController {
         mParseRoot = findViewById(R.id.parse_root);
         mGridView = findViewById(R.id.mGridView);
         mPlayerRetry = findViewById(R.id.play_retry);
+        mPlayPauseBtn = findViewById(R.id.play);
         mNextBtn = findViewById(R.id.play_next);
         mPreBtn = findViewById(R.id.play_pre);
         mPlayerScaleBtn = findViewById(R.id.play_scale);
@@ -178,6 +183,28 @@ public class VodController extends BaseController {
             public void onClick(View v) {
                 listener.replay();
                 hideBottom();
+            }
+        });
+        mPlayTitle.setOnLongClickListener(new OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                ClipboardManager manager = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+                String url = getUrl();
+                if (url != null) {
+                    ClipData clipData = ClipData.newPlainText("Label", url);
+                    manager.setPrimaryClip(clipData);
+                    Toast.makeText(getContext(), url + " 已经复制到剪切板", Toast.LENGTH_LONG).show();
+                    return true;
+                }
+                return false;
+            }
+        });
+        mPlayPauseBtn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (isInPlaybackState()) {
+                    togglePlay();
+                }
             }
         });
         mNextBtn.setOnClickListener(new OnClickListener() {
@@ -489,9 +516,15 @@ public class VodController extends BaseController {
             case VideoView.STATE_IDLE:
                 break;
             case VideoView.STATE_PLAYING:
+                if (mPlayPauseBtn != null) {
+                    mPlayPauseBtn.setText("暂停");
+                }
                 startProgress();
                 break;
             case VideoView.STATE_PAUSED:
+                if (mPlayPauseBtn != null) {
+                    mPlayPauseBtn.setText("播放");
+                }
                 break;
             case VideoView.STATE_ERROR:
                 listener.errReplay();

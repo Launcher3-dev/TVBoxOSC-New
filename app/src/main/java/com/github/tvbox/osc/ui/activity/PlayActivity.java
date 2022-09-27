@@ -1075,7 +1075,7 @@ public class PlayActivity extends BaseActivity {
         webView.setOverScrollMode(View.OVER_SCROLL_ALWAYS);
         addContentView(webView, layoutParams);
         /* 添加webView配置 */
-        final XWalkSettings settings = webView.getSettings();
+        final WebSettings settings = webView.getSettings();
         settings.setAllowContentAccess(true);
         settings.setAllowFileAccess(true);
         settings.setAllowUniversalAccessFromFileURLs(true);
@@ -1104,7 +1104,7 @@ public class PlayActivity extends BaseActivity {
         // settings.setUserAgentString(ANDROID_UA);
 
         webView.setBackgroundColor(Color.BLACK);
-        webView.setUIClient(new XWalkUIClient(webView) {
+        webView.setUIClient(new XWalkUIClient(webView, null, null) {
             @Override
             public boolean onConsoleMessage(XWalkView view, String message, int lineNumber, String sourceId, ConsoleMessageType messageType) {
                 return false;
@@ -1131,7 +1131,7 @@ public class PlayActivity extends BaseActivity {
 
     private class XWalkWebClient extends XWalkResourceClient {
         public XWalkWebClient(XWalkView view) {
-            super(view);
+            super(view, null, null);
         }
 
         @Override

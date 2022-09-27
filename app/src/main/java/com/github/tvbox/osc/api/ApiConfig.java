@@ -39,6 +39,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author pj567
@@ -59,6 +61,7 @@ public class ApiConfig {
     private SourceBean emptyHome = new SourceBean();
 
     private JarLoader jarLoader = new JarLoader();
+    private ExecutorService mSignalPool = Executors.newSingleThreadExecutor();
 
 
     private ApiConfig() {
@@ -78,7 +81,7 @@ public class ApiConfig {
         return instance;
     }
 
-    public void loadConfig(boolean useCache, LoadConfigCallback callback, Activity activity) {
+    public void loadConfig(boolean useCache, LoadConfigCallback callback) {
         String apiUrl = Hawk.get(HawkConfig.API_URL, "");
         if (apiUrl.isEmpty()) {
             callback.error("-1");
@@ -157,58 +160,71 @@ public class ApiConfig {
 
 
     public void loadJar(boolean useCache, String spider, LoadConfigCallback callback) {
-        String[] urls = spider.split(";md5;");
-        String jarUrl = urls[0];
-        String md5 = urls.length > 1 ? urls[1].trim() : "";
-        File cache = new File(App.getInstance().getFilesDir().getAbsolutePath() + "/csp.jar");
+        mSignalPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                String[] urls = spider.split(";md5;");
+                String jarUrl = urls[0];
+                String md5 = urls.length > 1 ? urls[1].trim() : "";
+                File cache = new File(App.getInstance().getFilesDir().getAbsolutePath() + File.separator + MD5.encode(spider) + "_csp.jar");
 
-        if (!md5.isEmpty() || useCache) {
-            if (cache.exists() && (useCache || MD5.getFileMd5(cache).equalsIgnoreCase(md5))) {
-                if (jarLoader.load(cache.getAbsolutePath())) {
-                    callback.success();
-                } else {
-                    callback.error("");
+                if (!md5.isEmpty() || useCache) {
+                    if (cache.exists() && (useCache || MD5.getFileMd5(cache).equalsIgnoreCase(md5))) {
+                        if (jarLoader.load(cache.getAbsolutePath())) {
+                            callback.success();
+                        } else {
+                            callback.error("");
+                        }
+                        return;
+                    }
                 }
-                return;
-            }
-        }
 
-        OkGo.<File>get(jarUrl).execute(new AbsCallback<File>() {
+                OkGo.<File>get(jarUrl).execute(new AbsCallback<File>() {
 
-            @Override
-            public File convertResponse(okhttp3.Response response) throws Throwable {
-                File cacheDir = cache.getParentFile();
-                if (!cacheDir.exists())
-                    cacheDir.mkdirs();
-                if (cache.exists())
-                    cache.delete();
-                FileOutputStream fos = new FileOutputStream(cache);
-                fos.write(response.body().bytes());
-                fos.flush();
-                fos.close();
-                return cache;
-            }
+                    @Override
+                    public File convertResponse(okhttp3.Response response) throws Throwable {
+                        File cacheDir = cache.getParentFile();
+                        if (!cacheDir.exists())
+                            cacheDir.mkdirs();
+                        if (cache.exists())
+                            cache.delete();
+                        FileOutputStream fos = new FileOutputStream(cache);
+                        fos.write(response.body().bytes());
+                        fos.flush();
+                        fos.close();
+                        return cache;
+                    }
 
-            @Override
-            public void onSuccess(Response<File> response) {
-                if (response.body().exists()) {
-                    if (jarLoader.load(response.body().getAbsolutePath())) {
-                        callback.success();
-                    } else {
+                    @Override
+                    public void onSuccess(Response<File> response) {
+                        if (response.body().exists()) {
+                            if (jarLoader.load(response.body().getAbsolutePath())) {
+                                callback.success();
+                            } else {
+                                callback.error("");
+                            }
+                        } else {
+                            callback.error("");
+                        }
+                    }
+
+                    @Override
+                    public void onError(Response<File> response) {
+                        super.onError(response);
                         callback.error("");
                     }
-                } else {
-                    callback.error("");
-                }
-            }
-
-            @Override
-            public void onError(Response<File> response) {
-                super.onError(response);
-                callback.error("");
+                });
             }
         });
     }
+
+    //https://freed.yuanhsing.cf/TVBox/meowcf.json
+    //
+    //https://agit.ai/hu/hcr/raw/branch/master/MMM.txt
+    //
+    //https://pastebin.com/raw/gtbKvnE1
+    //
+    //https://pastebin.com/raw/sbPpDm9G
 
     private void parseJson(String apiUrl, File f) throws Throwable {
         System.out.println("从本地缓存加载" + f.getAbsolutePath());
