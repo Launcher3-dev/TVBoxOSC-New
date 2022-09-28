@@ -5,6 +5,22 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <TextView
+        android:id="@+id/dlna"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginTop="@dimen/vs_20"
+        android:layout_marginEnd="@dimen/vs_20"
+        android:layout_marginRight="@dimen/vs_20"
+        android:background="@drawable/button_dialog_main"
+        android:focusable="true"
+        android:padding="@dimen/vs_10"
+        android:text="投屏"
+        android:textColor="@android:color/white"
+        android:textSize="@dimen/ts_24"
+        android:visibility="gone"/>
+
     <LinearLayout
         android:id="@+id/bottom_container"
         android:layout_width="match_parent"
@@ -35,7 +51,6 @@
                 android:background="@drawable/button_dialog_main"
                 android:focusable="true"
                 android:padding="@dimen/vs_10"
-                android:paddingRight="@dimen/vs_10"
                 android:text="播放"
                 android:textColor="@android:color/white"
                 android:textSize="@dimen/ts_24" />
@@ -378,5 +393,14 @@
         android:indeterminateOnly="true"
         android:tag="vod_control_loading"
         android:visibility="gone" />
+
+
+    <FrameLayout
+        android:id="@+id/dlna_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+
+    </FrameLayout>
 
 </FrameLayout>

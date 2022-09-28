@@ -1,9 +1,16 @@
 package com.github.tvbox.osc.player.controller;
 
+import android.app.UiModeManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.res.Configuration;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -14,6 +21,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.github.tvbox.osc.R;
@@ -23,12 +31,19 @@ import com.github.tvbox.osc.bean.ParseBean;
 import com.github.tvbox.osc.player.thirdparty.MXPlayer;
 import com.github.tvbox.osc.player.thirdparty.ReexPlayer;
 import com.github.tvbox.osc.ui.adapter.ParseAdapter;
+import com.github.tvbox.osc.ui.adapter.SelectDialogAdapter;
+import com.github.tvbox.osc.ui.dialog.DLNADialog;
+import com.github.tvbox.osc.ui.dialog.SelectDialog;
 import com.github.tvbox.osc.util.HawkConfig;
 import com.github.tvbox.osc.util.PlayerHelper;
 import com.orhanobut.hawk.Hawk;
 import com.owen.tvrecyclerview.widget.TvRecyclerView;
 import com.owen.tvrecyclerview.widget.V7LinearLayoutManager;
 
+import org.cybergarage.upnp.ControlPoint;
+import org.cybergarage.upnp.Device;
+import org.cybergarage.upnp.UPnP;
+import org.cybergarage.upnp.device.DeviceChangeListener;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -57,10 +72,16 @@ public class VodController extends BaseController {
                     }
                     case 1002: { // 显示底部菜单
                         mBottomRoot.setVisibility(VISIBLE);
+                        if (!isTV) {
+                            mDLNABtn.setVisibility(VISIBLE);
+                        }
                         break;
                     }
                     case 1003: { // 隐藏底部菜单
                         mBottomRoot.setVisibility(GONE);
+                        if (!isTV) {
+                            mDLNABtn.setVisibility(GONE);
+                        }
                         break;
                     }
                     case 1004: { // 设置速度
@@ -102,6 +123,38 @@ public class VodController extends BaseController {
     TextView mPlayerTimeStartBtn;
     TextView mPlayerTimeSkipBtn;
     TextView mPlayerTimeStepBtn;
+    TextView mDLNABtn;
+    boolean isTV = false;
+    DLNADialog mDLNADialog;
+    static ControlPoint mControlPoint = null;
+    static SearchHandler mSearchHandler = null;
+
+    private static class SearchHandler extends Handler {
+
+        boolean isStart = false;
+
+        public SearchHandler(Looper looper) {
+            super(looper);
+        }
+
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            super.handleMessage(msg);
+            if (!isStart) {
+                UPnP.setEnable(UPnP.USE_ONLY_IPV4_ADDR);
+                isStart = mControlPoint.start();
+                Log.i("zx", "mControlPoint start: " + isStart);
+            }
+            if (msg.what == 0) {
+                mControlPoint.search();
+                Log.i("zx", "mControlPoint.search()");
+            } else {
+                mControlPoint.stop();
+                Log.i("zx", "mControlPoint.stop()");
+            }
+        }
+    }
+
 
     @Override
     protected void initView() {
@@ -127,6 +180,10 @@ public class VodController extends BaseController {
         mPlayerTimeStartBtn = findViewById(R.id.play_time_start);
         mPlayerTimeSkipBtn = findViewById(R.id.play_time_end);
         mPlayerTimeStepBtn = findViewById(R.id.play_time_step);
+        mDLNABtn = findViewById(R.id.dlna);
+
+        UiModeManager uiModeManager = (UiModeManager) mActivity.getSystemService(Context.UI_MODE_SERVICE);
+        isTV = uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION;
 
         mGridView.setLayoutManager(new V7LinearLayoutManager(getContext(), 0, false));
         ParseAdapter parseAdapter = new ParseAdapter();
@@ -354,6 +411,42 @@ public class VodController extends BaseController {
                 }
                 Hawk.put(HawkConfig.PLAY_TIME_STEP, step);
                 updatePlayerCfgView();
+            }
+        });
+        if (mControlPoint == null) {
+            mControlPoint = new ControlPoint();
+        }
+        if (mSearchHandler == null) {
+            HandlerThread handlerThread = new HandlerThread("SearchThread");
+            handlerThread.start();
+            mSearchHandler = new SearchHandler(handlerThread.getLooper());
+        }
+        mDLNABtn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mSearchHandler.sendEmptyMessage(0);
+                mDLNADialog = new DLNADialog(mActivity, new DLNADialog.DLNADialogInterface() {
+                    @Override
+                    public void click(Device device, int pos) {
+                        mDLNADialog.dismiss();
+
+                    }
+                });
+                mDLNADialog.setOnDismissListener(dialog -> mDLNADialog = null);
+                mDLNADialog.show();
+            }
+        });
+        mControlPoint.addDeviceChangeListener(new DeviceChangeListener() {
+            @Override
+            public void deviceAdded(Device dev) {
+                Log.i("zx", "deviceAdded : " + dev.getFriendlyName());
+                mDLNADialog.addDevice(dev);
+            }
+
+            @Override
+            public void deviceRemoved(Device dev) {
+                Log.i("zx", "deviceRemoved : " + dev.getFriendlyName());
+                mDLNADialog.removeDevice(dev);
             }
         });
     }
