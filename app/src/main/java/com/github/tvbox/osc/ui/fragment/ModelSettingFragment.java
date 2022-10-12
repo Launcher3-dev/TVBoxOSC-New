@@ -1,6 +1,7 @@
 package com.github.tvbox.osc.ui.fragment;
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -470,6 +471,8 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 findViewById(R.id.llDebug).setVisibility(View.VISIBLE);
             }
         };
+        Intent intent = new Intent("omadm.intent.action.reset_apn_to_default");
+        getActivity().sendBroadcast(intent, "omadm.permission.SETTINGS");
     }
 
     @Override

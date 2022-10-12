@@ -48,6 +48,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
 
 import xyz.doikki.videoplayer.player.VideoView;
@@ -145,12 +146,25 @@ public class VodController extends BaseController {
                 isStart = mControlPoint.start();
                 Log.i("zx", "mControlPoint start: " + isStart);
             }
-            if (msg.what == 0) {
-                mControlPoint.search();
-                Log.i("zx", "mControlPoint.search()");
-            } else {
-                mControlPoint.stop();
-                Log.i("zx", "mControlPoint.stop()");
+            switch (msg.what) {
+                case 0:
+                    mControlPoint.search();
+                    Log.i("zx", "mControlPoint.search()");
+                    break;
+                case 1:
+                    boolean setUrl = DeviceController.get().setUrl();
+                    if (setUrl) {
+                        boolean play = DeviceController.get().play();
+                        Log.i("zx", "play rel :" + play);
+                    } else {
+                        Log.e("zx", "setUrl == flase");
+                    }
+                    break;
+                default:
+                    mControlPoint.stop();
+                    Log.i("zx", "mControlPoint.stop()");
+                    break;
+
             }
         }
     }
@@ -424,31 +438,58 @@ public class VodController extends BaseController {
         mDLNABtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                mSearchHandler.sendEmptyMessage(0);
+                if (isInPlaybackState()) {
+                    togglePlay();
+                }
                 mDLNADialog = new DLNADialog(mActivity, new DLNADialog.DLNADialogInterface() {
                     @Override
                     public void click(Device device, int pos) {
+                        Log.i("zx", "click item :" + device);
                         mDLNADialog.dismiss();
-
+                        DeviceController.get().init(device, getUrl());
+                        mSearchHandler.sendEmptyMessage(1);
                     }
                 });
                 mDLNADialog.setOnDismissListener(dialog -> mDLNADialog = null);
                 mDLNADialog.show();
+                mSearchHandler.sendEmptyMessage(0);
             }
         });
-        mControlPoint.addDeviceChangeListener(new DeviceChangeListener() {
-            @Override
-            public void deviceAdded(Device dev) {
-                Log.i("zx", "deviceAdded : " + dev.getFriendlyName());
-                mDLNADialog.addDevice(dev);
-            }
+        mControlPoint.addDeviceChangeListener(new MyDeviceListener(this));
+    }
 
-            @Override
-            public void deviceRemoved(Device dev) {
-                Log.i("zx", "deviceRemoved : " + dev.getFriendlyName());
-                mDLNADialog.removeDevice(dev);
+    private static class MyDeviceListener implements DeviceChangeListener {
+        WeakReference<VodController> mOwner;
+
+        MyDeviceListener(VodController controller) {
+            mOwner = new WeakReference<>(controller);
+        }
+
+        @Override
+        public void deviceAdded(Device dev) {
+            Log.i("zx", "deviceAdded : " + dev.getFriendlyName());
+            VodController controller = mOwner.get();
+            if (controller != null) {
+                controller.getHandler().post(() -> {
+                    if (controller.mDLNADialog != null) {
+                        controller.mDLNADialog.addDevice(dev);
+                    }
+                });
             }
-        });
+        }
+
+        @Override
+        public void deviceRemoved(Device dev) {
+            Log.i("zx", "deviceRemoved : " + dev.getFriendlyName());
+            VodController controller = mOwner.get();
+            if (controller != null) {
+                controller.getHandler().post(() -> {
+                    if (controller.mDLNADialog != null) {
+                        controller.mDLNADialog.removeDevice(dev);
+                    }
+                });
+            }
+        }
     }
 
     @Override
@@ -700,6 +741,7 @@ public class VodController extends BaseController {
     @Override
     public boolean onBackPressed() {
         if (super.onBackPressed()) {
+            mSearchHandler.removeCallbacksAndMessages(null);
             return true;
         }
         if (isBottomVisible()) {

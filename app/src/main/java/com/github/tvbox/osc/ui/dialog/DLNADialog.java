@@ -106,7 +106,7 @@ public class DLNADialog extends BaseDialog {
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             Device device = data.get(position);
             ((TextView) holder.itemView.findViewById(R.id.deviceName)).setText(device.getFriendlyName() + "");
-            holder.itemView.setOnClickListener(new View.OnClickListener() {
+            ((TextView) holder.itemView.findViewById(R.id.deviceName)).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     dialogInterface.click(device, position);

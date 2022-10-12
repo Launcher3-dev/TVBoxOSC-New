@@ -25,6 +25,8 @@
 
 package org.cybergarage.net;
 
+import android.util.Log;
+
 import org.cybergarage.util.KLog;
 
 import java.net.Inet4Address;
@@ -96,6 +98,10 @@ public class HostInterface {
             Enumeration nis = NetworkInterface.getNetworkInterfaces();
             while (nis.hasMoreElements()) {
                 NetworkInterface ni = (NetworkInterface) nis.nextElement();
+                if( !ni.supportsMulticast() ) { // added due to Android security requirements
+                    Log.w("TAG", "NetworkInterface " + ni + " not supportsMulticast");
+                    continue;
+                } // end of fix
                 Enumeration addrs = ni.getInetAddresses();
                 while (addrs.hasMoreElements()) {
                     InetAddress addr = (InetAddress) addrs.nextElement();
@@ -169,6 +175,10 @@ public class HostInterface {
             Enumeration nis = NetworkInterface.getNetworkInterfaces();
             while (nis.hasMoreElements()) {
                 NetworkInterface ni = (NetworkInterface) nis.nextElement();
+                if( !ni.supportsMulticast() ) { // added due to Android security requirements
+                    Log.w("TAG", "NetworkInterface " + ni + " not supportsMulticast");
+                    continue;
+                } // end of fix
                 Enumeration addrs = ni.getInetAddresses();
                 while (addrs.hasMoreElements()) {
                     InetAddress addr = (InetAddress) addrs.nextElement();
