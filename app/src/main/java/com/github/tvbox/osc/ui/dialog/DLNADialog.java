@@ -49,6 +49,17 @@ public class DLNADialog extends BaseDialog {
         tvRecyclerView.setAdapter(mAdapter);
     }
 
+    public void addDevices(List<Device> devices) {
+        if (!devices.isEmpty()) {
+            if (mProgressBar.getVisibility() != View.GONE) {
+                mProgressBar.setVisibility(View.GONE);
+                mSearchingTv.setVisibility(View.GONE);
+            }
+            mDevices.addAll(devices);
+            mAdapter.setData(mDevices);
+        }
+    }
+
     public void addDevice(Device device) {
         if (mProgressBar.getVisibility() != View.GONE) {
             mProgressBar.setVisibility(View.GONE);

@@ -49,6 +49,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
 
 import xyz.doikki.videoplayer.player.VideoView;
@@ -126,9 +127,10 @@ public class VodController extends BaseController {
     TextView mPlayerTimeStepBtn;
     TextView mDLNABtn;
     boolean isTV = false;
-    DLNADialog mDLNADialog;
+    static DLNADialog mDLNADialog;
     static ControlPoint mControlPoint = null;
     static SearchHandler mSearchHandler = null;
+    static List<Device> sDevices = new ArrayList<>();
 
     private static class SearchHandler extends Handler {
 
@@ -438,7 +440,7 @@ public class VodController extends BaseController {
         mDLNABtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (isInPlaybackState()) {
+                if (isInPlaybackState() && mControlWrapper.isPlaying()) {
                     togglePlay();
                 }
                 mDLNADialog = new DLNADialog(mActivity, new DLNADialog.DLNADialogInterface() {
@@ -450,8 +452,15 @@ public class VodController extends BaseController {
                         mSearchHandler.sendEmptyMessage(1);
                     }
                 });
-                mDLNADialog.setOnDismissListener(dialog -> mDLNADialog = null);
+                mDLNADialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialog) {
+                        mDLNADialog = null;
+                        mSearchHandler.sendEmptyMessage(2);
+                    }
+                });
                 mDLNADialog.show();
+                mDLNADialog.addDevices(sDevices);
                 mSearchHandler.sendEmptyMessage(0);
             }
         });
@@ -468,11 +477,12 @@ public class VodController extends BaseController {
         @Override
         public void deviceAdded(Device dev) {
             Log.i("zx", "deviceAdded : " + dev.getFriendlyName());
+            sDevices.add(dev);
             VodController controller = mOwner.get();
             if (controller != null) {
                 controller.getHandler().post(() -> {
-                    if (controller.mDLNADialog != null) {
-                        controller.mDLNADialog.addDevice(dev);
+                    if (mDLNADialog != null) {
+                        mDLNADialog.addDevice(dev);
                     }
                 });
             }
@@ -482,6 +492,7 @@ public class VodController extends BaseController {
         public void deviceRemoved(Device dev) {
             Log.i("zx", "deviceRemoved : " + dev.getFriendlyName());
             VodController controller = mOwner.get();
+            sDevices.remove(dev);
             if (controller != null) {
                 controller.getHandler().post(() -> {
                     if (controller.mDLNADialog != null) {
